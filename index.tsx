@@ -864,7 +864,7 @@ class VoiceNotesApp {
           });
         };
 
-        setTimeout(updateTranscription, 0);
+        updateTranscription();
       } else {
         this.recordingStatus.textContent =
           'Transcription failed or returned empty.';
@@ -1110,89 +1110,91 @@ ${isRawTranscriptionEmpty ? '(No transcription provided or transcription is empt
 
         const finalPolishedTextForDisplay = polishedText;
         const updatePolishedNote = () => {
-          const htmlContent = marked.parse(finalPolishedTextForDisplay) as string;
-          this.polishedNote.innerHTML = htmlContent;
+          requestAnimationFrame(() => {
+            const htmlContent = marked.parse(finalPolishedTextForDisplay) as string;
+            this.polishedNote.innerHTML = htmlContent;
 
-          const images = this.polishedNote.querySelectorAll('img');
-          images.forEach(img => {
-            img.style.maxWidth = '50vw';
-          });
+            const images = this.polishedNote.querySelectorAll('img');
+            images.forEach(img => {
+              img.style.maxWidth = '50vw';
+            });
 
-          if (finalPolishedTextForDisplay.trim() !== '') {
-            this.polishedNote.classList.remove('placeholder-active');
-          } else {
-            const placeholder = this.polishedNote.getAttribute('placeholder') || '';
-            this.polishedNote.innerHTML = placeholder;
-            this.polishedNote.classList.add('placeholder-active');
-          }
-
-          let noteTitleSet = false;
-          const lines: string[] = finalPolishedTextForDisplay.split('\n').map((l: string) => l.trim());
-
-          for (const line of lines) {
-            if (line.startsWith('#')) {
-              const title = line.replace(/^#+\s+/, '').trim();
-              if (this.editorTitle && title) {
-                this.editorTitle.textContent = title;
-                this.editorTitle.classList.remove('placeholder-active');
-                noteTitleSet = true;
-                break;
-              }
+            if (finalPolishedTextForDisplay.trim() !== '') {
+              this.polishedNote.classList.remove('placeholder-active');
+            } else {
+              const placeholder = this.polishedNote.getAttribute('placeholder') || '';
+              this.polishedNote.innerHTML = placeholder;
+              this.polishedNote.classList.add('placeholder-active');
             }
-          }
 
-          if (!noteTitleSet && this.editorTitle) {
+            let noteTitleSet = false;
+            const lines: string[] = finalPolishedTextForDisplay.split('\n').map((l: string) => l.trim());
+
             for (const line of lines) {
-              if (line.length > 0 && !line.startsWith('![') && !line.startsWith('[SEARCH_IMAGE:')) { 
-                let potentialTitle = line.replace(
-                  /^[\*_\`#\->\s\[\]\(.\d)]+/,
-                  '',
-                );
-                potentialTitle = potentialTitle.replace(/[\*_\`#]+$/, '');
-                potentialTitle = potentialTitle.trim();
-
-                if (potentialTitle.length > 3) {
-                  const maxLength = 60;
-                  this.editorTitle.textContent =
-                    potentialTitle.substring(0, maxLength) +
-                    (potentialTitle.length > maxLength ? '...' : '');
+              if (line.startsWith('#')) {
+                const title = line.replace(/^#+\s+/, '').trim();
+                if (this.editorTitle && title) {
+                  this.editorTitle.textContent = title;
                   this.editorTitle.classList.remove('placeholder-active');
                   noteTitleSet = true;
                   break;
                 }
               }
             }
-          }
 
-          if (!noteTitleSet && this.editorTitle) {
-            const currentEditorText = this.editorTitle.textContent?.trim();
-            const placeholderText =
-              this.editorTitle.getAttribute('placeholder') || 'Untitled Note';
-            if (
-              currentEditorText === '' ||
-              currentEditorText === placeholderText
-            ) {
-              this.editorTitle.textContent = placeholderText;
-              if (!this.editorTitle.classList.contains('placeholder-active')) {
-                this.editorTitle.classList.add('placeholder-active');
+            if (!noteTitleSet && this.editorTitle) {
+              for (const line of lines) {
+                if (line.length > 0 && !line.startsWith('![') && !line.startsWith('[SEARCH_IMAGE:')) {
+                  let potentialTitle = line.replace(
+                    /^[\*_\`#\->\s\[\]\(.\d)]+/,
+                    '',
+                  );
+                  potentialTitle = potentialTitle.replace(/[\*_\`#]+$/, '');
+                  potentialTitle = potentialTitle.trim();
+
+                  if (potentialTitle.length > 3) {
+                    const maxLength = 60;
+                    this.editorTitle.textContent =
+                      potentialTitle.substring(0, maxLength) +
+                      (potentialTitle.length > maxLength ? '...' : '');
+                    this.editorTitle.classList.remove('placeholder-active');
+                    noteTitleSet = true;
+                    break;
+                  }
+                }
               }
             }
-          }
 
-          if (this.currentNote) this.currentNote.polishedNote = finalPolishedTextForDisplay;
-          if (!imageSearchAttempted && this.currentWebSearchResults === null) { 
-            this.recordingStatus.textContent = 'Note polished. Ready for next recording.';
-            this.logToDebugPanel("Note polished. Status: Ready.");
-          } else if (!imageSearchAttempted && this.currentWebSearchResults !== null) {
-            this.recordingStatus.textContent = 'Note polished after web search.';
-            this.logToDebugPanel("Note polished after web search (but currentWebSearchResults was not null, this might be odd). Status: Ready.");
-          } else if (imageSearchAttempted) {
-             // Status already set based on image search outcome
-             this.logToDebugPanel("Note polished with image search attempt. Status already set.");
-          }
+            if (!noteTitleSet && this.editorTitle) {
+              const currentEditorText = this.editorTitle.textContent?.trim();
+              const placeholderText =
+                this.editorTitle.getAttribute('placeholder') || 'Untitled Note';
+              if (
+                currentEditorText === '' ||
+                currentEditorText === placeholderText
+              ) {
+                this.editorTitle.textContent = placeholderText;
+                if (!this.editorTitle.classList.contains('placeholder-active')) {
+                  this.editorTitle.classList.add('placeholder-active');
+                }
+              }
+            }
+
+            if (this.currentNote) this.currentNote.polishedNote = finalPolishedTextForDisplay;
+            if (!imageSearchAttempted && this.currentWebSearchResults === null) {
+              this.recordingStatus.textContent = 'Note polished. Ready for next recording.';
+              this.logToDebugPanel("Note polished. Status: Ready.");
+            } else if (!imageSearchAttempted && this.currentWebSearchResults !== null) {
+              this.recordingStatus.textContent = 'Note polished after web search.';
+              this.logToDebugPanel("Note polished after web search (but currentWebSearchResults was not null, this might be odd). Status: Ready.");
+            } else if (imageSearchAttempted) {
+               // Status already set based on image search outcome
+               this.logToDebugPanel("Note polished with image search attempt. Status already set.");
+            }
+          }); // Close requestAnimationFrame
         };
-        setTimeout(updatePolishedNote, 0);
-      } else { 
+        updatePolishedNote();
+      } else {
         this.recordingStatus.textContent = 'Polishing returned empty or no content from Gemini.';
         this.logToDebugPanel("Polishing returned empty. Setting placeholder.");
         const polishedPlaceholder = this.polishedNote.getAttribute('placeholder') || '';
