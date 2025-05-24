@@ -8,6 +8,7 @@ import { GoogleGenAI, GenerateContentResponse } from '@google/genai';
 import { marked } from 'marked';
 
 const MODEL_NAME = 'gemini-2.5-flash-preview-04-17';
+
 const TAVILY_API_KEY = "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"; 
 
 interface Note {
